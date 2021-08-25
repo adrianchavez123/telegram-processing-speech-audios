@@ -1,5 +1,6 @@
 import requests
 import os
+
 word_count_service = os.environ.get('WORD_COUNTER_SERVICE', 'http://localhost:5000/api')
 deliver_assignment_endpoint = os.environ.get('DELIVER_ASSIGNMENT_ENDPOINT','/deliver-assignments')
 telegram_token = os.environ['TELEGRAM_TOKEN']
