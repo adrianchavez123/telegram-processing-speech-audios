@@ -9,7 +9,7 @@ telegram_token = os.environ['TELEGRAM_TOKEN']
 success_response = os.environ.get('SUCCESS_RESPONSE', 'Assignment delivered successfully')
 response_message = os.environ.get('RESPONSE_MESSAGE', 'Tarea recibida.')
 failure_message = os.environ.get('FAILURE_MESSAGE', 'Algo salia mal con el envio de la tarea, por favor vuelva a intentarlo.')
-analize_speech_method = os.environ.get('ANALIZE_SPEECH_METHOD', 'AMPLITUDE_TO_DB')
+analize_speech_method = os.environ.get('ANALIZE_SPEECH_METHOD', 'ENERGY_AND_TWO_STAGE_WIDE_BAND')
 
 bot = telebot.TeleBot(telegram_token)
 
@@ -34,7 +34,8 @@ def handle_audio(message):
 			bot.reply_to(message, response_message)
 		else:
 			bot.reply_to(message, failure_message)
-	except:
+	except Exception as e:
+		print(e)
 		bot.reply_to(message, failure_message)
 
 @bot.message_handler(content_types=['voice'])
@@ -49,6 +50,7 @@ def handle_voice(message):
 			bot.reply_to(message, response_message)
 		else:
 			bot.reply_to(message, failure_message)
-	except:
+	except Exception as e:
+		print(e)
 		bot.reply_to(message, failure_message)
 bot.polling()
