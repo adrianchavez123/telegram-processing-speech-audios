@@ -30,6 +30,7 @@ def convert_to_wav_format(file,format):
     sound = AudioSegment.from_file(file,format)
 
     if(sound.duration_seconds > int(max_size_audio_duration)):
+        remove_audio_file(file)
         raise Exception(str(sound.duration_seconds) + ' exceed the max audio\'s duration  of "'+ str(max_size_audio_duration))
     make_louder = sound.apply_gain(30)
     filename = file[0:-4]
@@ -60,3 +61,9 @@ def count_words_by_amplitude_level(file_name):
     db = librosa.amplitude_to_db(np.abs(coeffficients),ref=np.max)
     fragments = librosa.effects.split(Signal, top_db=20) # audio above 20db
     return str(len(fragments))
+
+def remove_audio_file(file_name):
+    try:
+        os.remove(file_name)
+    except:
+        print("Error while deleting file ", file_name)
