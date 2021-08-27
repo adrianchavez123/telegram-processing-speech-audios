@@ -4,11 +4,12 @@ import librosa
 import numpy as np
 import os
 
-audiosDir = os.environ.get('AUDIOS_DIRECTORY', './audios')
+audios_dir = os.environ.get('AUDIOS_DIRECTORY', './audios')
+max_size_audio_duration = os.environ.get('MAX_SIZE_AUDIO_DURATION', '180')
 
 def save_audio(file,user_id,date,unique_id,mime_type):
     format = get_format(mime_type)
-    new_file_name = audiosDir + "/" + str(user_id)+"_"+str(date)+"_"+str(unique_id+"."+format)
+    new_file_name = audios_dir + "/" + str(user_id)+"_"+str(date)+"_"+str(unique_id+"."+format)
     with open(new_file_name, 'wb') as new_file:
         new_file.write(file)
     return convert_to_wav_format(new_file_name,format),new_file_name
@@ -27,9 +28,13 @@ def get_format(mime_type):
 
 def convert_to_wav_format(file,format):
     sound = AudioSegment.from_file(file,format)
+
+    if(sound.duration_seconds > int(max_size_audio_duration)):
+        raise Exception(str(sound.duration_seconds) + ' exceed the max audio\'s duration  of "'+ str(max_size_audio_duration))
     make_louder = sound.apply_gain(30)
     filename = file[0:-4]
     make_louder.export(filename+".wav", format="wav")
+
     return make_louder
 
 def count_words(sound,method,file_name):
