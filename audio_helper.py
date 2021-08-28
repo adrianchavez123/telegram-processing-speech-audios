@@ -2,11 +2,13 @@ from pydub import AudioSegment
 from pydub.silence import split_on_silence
 from speechDetection import SpeechDetection
 import librosa
+import soundfile as sf
 import numpy as np
 import os
 
 audios_dir = os.environ.get('AUDIOS_DIRECTORY', './audios')
 max_size_audio_duration = os.environ.get('MAX_SIZE_AUDIO_DURATION', '180')
+max_size_audio_chunk_duration = os.environ.get('MAX_SIZE_AUDIO_CHUNK_DURATION', '20')
 
 def save_audio(file,user_id,date,unique_id,mime_type):
     format = get_format(mime_type)
@@ -35,10 +37,12 @@ def convert_to_wav_format(file,format):
         remove_audio_file(file)
         raise Exception(str(sound.duration_seconds) + ' exceed the max audio\'s duration  of "'+ str(max_size_audio_duration))
     make_louder = sound.apply_gain(30)
-    filename = file[0:-4]
-    make_louder = sound.set_frame_rate(16000)
-    make_louder.export(filename+".wav", format="wav")
-    remove_audio_file(file) # remove original audio
+    make_louder = sound
+    file_name = file[0:-4]
+    file_name,_ = split_file_name_from_extension(file)
+    #make_louder = make_louder.set_frame_rate(16000)
+    make_louder.export(file_name+".wav", format="wav")
+    remove_audio_file(file)
     return make_louder
 
 def count_words(sound,method,file_name):
@@ -46,17 +50,17 @@ def count_words(sound,method,file_name):
         return count_words_by_amplitude_level(file_name)
     elif(method == 'ENERGY_AND_TWO_STAGE_WIDE_BAND'):
         return count_words_by_energy_and_band_filters(file_name)
-    return count_words_by_silence(sound)
+    return count_words_by_silence(sound,file_name)
 
-def count_words_by_silence(sound):
-    duration_in_milliseconds = len(sound)
-    seconds = duration_in_milliseconds / 1000
+def count_words_by_silence(sound, file_name):
     audio_chunks = split_on_silence(sound,
         min_silence_len=500,
         silence_thresh=-16,
-        keep_silence=50,
+        keep_silence=100,
         seek_step=1
     )
+    chunk_file_names = save_chunks_of_audios(audio_chunks, file_name);
+    recogonize(chunk_file_names) # return text
     return str(len(audio_chunks))
 
 def count_words_by_amplitude_level(file_name):
@@ -64,17 +68,84 @@ def count_words_by_amplitude_level(file_name):
     n_fft = 2048
     coeffficients = librosa.stft(Signal,n_fft=n_fft, hop_length=n_fft//2)
     db = librosa.amplitude_to_db(np.abs(coeffficients),ref=np.max)
-    fragments = librosa.effects.split(Signal, top_db=20) # audio above 20db
+    fragments = librosa.effects.split(Signal, top_db=16) # audio above 20db
+    print(str(len(fragments)))
+    save_librosa_chunks_of_audios(fragments,Signal, file_name, sr)
     return str(len(fragments))
 
 def count_words_by_energy_and_band_filters(file_name):
     detection = SpeechDetection(file_name)
     speech = detection.detect_speech()
-    print(len(speech))
     return str(len(speech))
+
+
+def save_librosa_chunks_of_audios(fragments,Signal, file, sr):
+    file_name,extension = split_file_name_from_extension(file)
+    counter = 0
+    for chunk in fragments:
+        sf.write(f"{file_name}_{counter}.wav", Signal[chunk[0]:chunk[1]], sr)
+        counter = counter + 1
+
+
+
+def save_chunks_of_audios(audio_chunks, file_name):
+    print("len "+str(len(audio_chunks)))
+    chunk_file_names = []
+    counter = 0
+    for chunk in audio_chunks:
+        duration_in_milliseconds = len(chunk)
+        seconds = duration_in_milliseconds / 1000
+        file_name_without_extension,_ = split_file_name_from_extension(file_name)
+        #print(seconds)
+        if(seconds < int(max_size_audio_chunk_duration)):
+            # save_long file
+            c, file_names = save_short_audio_chunck(chunk, file_name_without_extension, counter)
+            # chunk_file_names append file_names
+            counter = c
+        else:
+            # save_long file
+            c, file_names = save_long_audio_chunck(chunk, file_name_without_extension, counter)
+            # chunk_file_names append file_names
+            counter = c
+        #counter = counter + 1
+
+def save_short_audio_chunck(audio, file_name, counter):
+    duration_in_milliseconds = len(audio)
+    seconds = duration_in_milliseconds / 1000
+    chunk_file_names = []
+    if(seconds > 10):
+        print("if menor de 10s unir ")
+        print("if too small join together ")
+        # save_audio_file(chunk, f"{file_name}_{counter}.wav")
+    else:
+        save_audio_file(audio, f"{file_name}_{counter}.wav")
+        counter = counter + 1
+    return counter, chunk_file_names
+
+def save_long_audio_chunck(audio, file_name, counter):
+    duration_in_milliseconds = len(audio)
+    seconds = duration_in_milliseconds / 1000
+    chunk_file_names = []
+    if(seconds < 40):
+        save_audio_file(audio, f"{file_name}_{counter}.wav")
+    else:
+        print("if too long divide ")
+    return counter, chunk_file_names
+
+
+def save_audio_file(audio, file_name):
+    # audio = audio.set_frame_rate(16000)
+    audio.export(file_name, format="wav")
 
 def remove_audio_file(file_name):
     try:
         os.remove(file_name)
     except:
         print("Error while deleting file ", file_name)
+
+def split_file_name_from_extension(file):
+    file_name = file[0:-4]
+    extension = file[-4:]
+    return file_name, extension
+def recogonize(chunk_file_names):
+    pass
