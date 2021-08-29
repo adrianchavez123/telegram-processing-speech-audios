@@ -10,8 +10,6 @@ import os
 audios_dir = os.environ.get('AUDIOS_DIRECTORY', './audios')
 max_size_audio_duration = os.environ.get('MAX_SIZE_AUDIO_DURATION', '180')
 max_size_audio_chunk_duration = os.environ.get('MAX_SIZE_AUDIO_CHUNK_DURATION', '20')
-max_m = os.environ.get('MAX_M', '20000')
-
 
 def save_audio(file,user_id,date,unique_id,mime_type):
     format = get_format(mime_type)
@@ -71,10 +69,14 @@ def count_words_by_amplitude_level(file_name):
     n_fft = 2048
     coeffficients = librosa.stft(Signal,n_fft=n_fft, hop_length=n_fft//2)
     db = librosa.amplitude_to_db(np.abs(coeffficients),ref=np.max)
-    fragments = librosa.effects.split(Signal, top_db=16) # audio above 20db
-    print(str(len(fragments)))
+    fragments = librosa.effects.split(Signal, top_db=20) # audio above 20db
     file_names = save_librosa_chunks_of_audios(fragments,Signal, file_name, sr)
+    seconds = librosa.get_duration(y=Signal, sr=sr)
+
+    print("fragments:")
     recognize(file_names)
+    print("whole audio:")
+    recognize([file_name])
     return str(len(fragments))
 
 def count_words_by_energy_and_band_filters(file_name):
@@ -86,26 +88,41 @@ def count_words_by_energy_and_band_filters(file_name):
 def save_librosa_chunks_of_audios(fragments,Signal, file, sr):
     file_name,extension = split_file_name_from_extension(file)
     counter = 0
+    chunk_counter = 0
     file_names = []
-    max = 60000
+    max_segment_size = int(10*sr)
     framesSize = 0
-
     a = np.array(Signal[0:1])
+    pad=0.400
+    overlap = int(pad * sr)
+
     for chunk in fragments:
-        name = f"{file_name}_{counter}.wav"
-        sf.write(name, Signal[chunk[0]:chunk[1]], sr)
+        start = chunk[0]
+        # increase frame size to avoid choping sounds on one syllabel sound
+        end = chunk[1]
 
-        frameSize = chunk[1] - chunk[0]
+        if(start - end < overlap):
+            pad_duration = 0.200
+
+        if(start - overlap > 0):
+            start = chunk[0] + overlap
+        if(end + 1000 < len(Signal)):
+            end = chunk[1] + overlap
+
+        silence = np.zeros(int(pad_duration*sr))
+        frameSize = end - start
         framesSize = framesSize + frameSize
-        a = np.append(a, Signal[chunk[0]:chunk[1]] ,axis = 0)
 
-        if(framesSize > 60000):
-            sf.write(f"audios/test{counter}.wav", a, sr)
+        a =  np.concatenate([a, Signal[start:end]])
+        a =  np.concatenate([a, silence])
+        if(framesSize > max_segment_size or chunk_counter == len(fragments) -1):
+            name = f"{file_name}_{counter}.wav"
+            sf.write(name, a, sr)
             framesSize = 0
             a = np.array(Signal[0:1])
-        print(str(chunk[0]) + " ---"+str(chunk[1])+ " =  " + str(chunk[1] - chunk[0]))
-        file_names.append(name)
-        counter = counter + 1
+            file_names.append(name)
+            counter = counter + 1
+        chunk_counter = chunk_counter + 1
     return file_names
 
 def save_chunks_of_audios(audio_chunks, file_name):
@@ -134,6 +151,7 @@ def save_short_audio_chunck(audio, file_name, counter):
     chunk_file_names = []
     if(seconds > 10):
         # save_audio_file(chunk, f"{file_name}_{counter}.wav")
+        pass
     else:
         save_audio_file(audio, f"{file_name}_{counter}.wav")
         counter = counter + 1
