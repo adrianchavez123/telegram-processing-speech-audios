@@ -67,16 +67,21 @@ def count_words_by_silence(sound, file_name):
 def count_words_by_amplitude_level(file_name):
     Signal,sr = librosa.load(file_name)
     n_fft = 2048
-    coeffficients = librosa.stft(Signal,n_fft=n_fft, hop_length=n_fft//2)
+    coeffficients = librosa.stft(Signal,n_fft=n_fft, hop_length=n_fft//2,window='hann', center=True)
     db = librosa.amplitude_to_db(np.abs(coeffficients),ref=np.max)
     fragments = librosa.effects.split(Signal, top_db=20) # audio above 20db
     file_names = save_librosa_chunks_of_audios(fragments,Signal, file_name, sr)
     seconds = librosa.get_duration(y=Signal, sr=sr)
 
-    print("fragments:")
+    print("break by stft: ...\n\n")
     recognize(file_names)
-    print("whole audio:")
+    remove_files(file_names)
+    print("whole audio:  ...\n\n")
     recognize([file_name])
+    print("split by size  ...\n\n")
+    file_names = save_segment_of_audios(Signal, file_name, sr)
+    recognize(file_names)
+    remove_files(file_names)
     return str(len(fragments))
 
 def count_words_by_energy_and_band_filters(file_name):
@@ -84,6 +89,19 @@ def count_words_by_energy_and_band_filters(file_name):
     speech = detection.detect_speech()
     return str(len(speech))
 
+def save_segment_of_audios(Signal, file, sr):
+    file_name,extension = split_file_name_from_extension(file)
+    max_segment_size = int(10*sr)
+    frame_size = 0
+    chunk_counter = 0
+    file_names = []
+    while frame_size < len(Signal):
+        name = f"{file_name}_segment_{chunk_counter}.wav"
+        sf.write(name, Signal[frame_size : frame_size + max_segment_size], sr)
+        file_names.append(name)
+        frame_size += max_segment_size
+        chunk_counter = chunk_counter + 1
+    return file_names
 
 def save_librosa_chunks_of_audios(fragments,Signal, file, sr):
     file_name,extension = split_file_name_from_extension(file)
@@ -167,10 +185,13 @@ def save_long_audio_chunck(audio, file_name, counter):
         pass
     return counter, chunk_file_names
 
-
 def save_audio_file(audio, file_name):
     # audio = audio.set_frame_rate(16000)
     audio.export(file_name, format="wav")
+
+def remove_files(file_names):
+    for file_name in file_names:
+        remove_audio_file(file_name)
 
 def remove_audio_file(file_name):
     try:
