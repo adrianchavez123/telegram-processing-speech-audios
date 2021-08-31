@@ -2,6 +2,8 @@ import speech_recognition as sr
 import os, json
 from ibm_watson import SpeechToTextV1
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
+from vosk import Model, KaldiRecognizer, SetLogLevel
+import wave
 
 ibm_speech_to_text_api_key = os.environ['IBM_SPEECH_TO_TEXT_API_KEY']
 ibm_speech_to_text_url = os.environ['IBM_SPEECH_TO_TEXT_URL']
@@ -17,7 +19,34 @@ class SpeechToText():
             return self._recognize_google()
         elif(self.method == 'ibm'):
             return self._recognize_ibm()
+        elif(self.method == 'vosk'):
+            return self._recognize_vosk()
         raise Exception('Unrecognized method to translate speech to text.')
+
+    def _recognize_vosk(self):
+        SetLogLevel(0)
+        if not os.path.exists("vosk-model-small-es-0.3"):
+            raise Exception("Please download the model from https://alphacephei.com/vosk/models and unpack as 'model' in the current folder.")
+        text = []
+        wf = wave.open(self.file_name, "rb")
+        if wf.getnchannels() != 1 or wf.getsampwidth() != 2 or wf.getcomptype() != "NONE":
+            raise Exception("Audio file must be WAV format mono PCM.")
+        model = Model("vosk-model-small-es-0.3")
+        rec = KaldiRecognizer(model, wf.getframerate())
+        rec.SetWords(True)
+
+        while True:
+            data = wf.readframes(4000)
+            if len(data) == 0:
+                break
+            rec.AcceptWaveform(data)
+
+        try:
+            res = json.loads(rec.FinalResult())
+            return res['text']
+        except Exception as e:
+            print(e)
+            return ""
 
     def _recognize_google(self):
         r = sr.Recognizer()
@@ -25,7 +54,6 @@ class SpeechToText():
             audio = r.listen(source)
             try:
                 text = r.recognize_google(audio, language="es-MX")
-                # print(text)
                 return text
             except sr.UnknownValueError:
                 print("Audio Unintelligible")
@@ -48,6 +76,8 @@ class SpeechToText():
             res = stt.recognize(audio=f, content_type='audio/wav', model='es-MX_BroadbandModel',continuous=True)
             if(res.get_status_code() != 200):
                 return ''
-            text = res.get_result()['results'][0]['alternatives'][0]['transcript']
-            # print(text)
-            return text
+            try:
+                text = res.get_result()['results'][0]['alternatives'][0]['transcript']
+            except Exception as e:
+                print(e)
+                return ""

@@ -5,7 +5,9 @@ from speechToText import SpeechToText
 import librosa
 import soundfile as sf
 import numpy as np
-import os
+import os,json
+from vosk import Model, KaldiRecognizer, SetLogLevel
+import wave
 
 audios_dir = os.environ.get('AUDIOS_DIRECTORY', './audios')
 max_size_audio_duration = os.environ.get('MAX_SIZE_AUDIO_DURATION', '180')
@@ -46,14 +48,14 @@ def convert_to_wav_format(file,format):
     remove_audio_file(file)
     return make_louder
 
-def count_words(sound,method,file_name):
+def analyze_audio(sound,method,file_name):
     if(method == 'AMPLITUDE_TO_DB'):
-        return count_words_by_amplitude_level(file_name)
+        return analyze_by_amplitude_level(file_name)
     elif(method == 'ENERGY_AND_TWO_STAGE_WIDE_BAND'):
-        return count_words_by_energy_and_band_filters(file_name)
-    return count_words_by_silence(sound,file_name)
+        return analyze_by_energy_and_band_filters(file_name)
+    return analyze_split_audio_by_silence(sound,file_name)
 
-def count_words_by_silence(sound, file_name):
+def analyze_split_audio_by_silence(sound, file_name):
     audio_chunks = split_on_silence(sound,
         min_silence_len=500,
         silence_thresh=-16,
@@ -61,30 +63,30 @@ def count_words_by_silence(sound, file_name):
         seek_step=1
     )
     chunk_file_names = save_chunks_of_audios(audio_chunks, file_name);
-    recognize(chunk_file_names) # return text
-    return str(len(audio_chunks))
+    text = recognize(chunk_file_names)
+    return str(len(audio_chunks)), text
 
-def count_words_by_amplitude_level(file_name):
+def analyze_by_amplitude_level(file_name):
     Signal,sr = librosa.load(file_name)
     n_fft = 2048
     coeffficients = librosa.stft(Signal,n_fft=n_fft, hop_length=n_fft//2,window='hann', center=True)
     db = librosa.amplitude_to_db(np.abs(coeffficients),ref=np.max)
     fragments = librosa.effects.split(Signal, top_db=20) # audio above 20db
-    file_names = save_librosa_chunks_of_audios(fragments,Signal, file_name, sr)
+    #file_names = save_librosa_chunks_of_audios(fragments,Signal, file_name, sr)
     seconds = librosa.get_duration(y=Signal, sr=sr)
 
-    print("break by stft: ...\n\n")
-    recognize(file_names)
-    remove_files(file_names)
-    print("whole audio:  ...\n\n")
-    recognize([file_name])
-    print("split by size  ...\n\n")
+    #print("break by stft: ...\n\n")
+    #recognize(file_names)
+    #remove_files(file_names)
+    #print("whole audio:  ...\n\n")
+    #recognize([file_name])
+    #print("split by size  ...\n\n")
     file_names = save_segment_of_audios(Signal, file_name, sr)
-    recognize(file_names)
+    text = recognize(file_names)
     remove_files(file_names)
-    return str(len(fragments))
+    return str(len(fragments)), text
 
-def count_words_by_energy_and_band_filters(file_name):
+def analyze_by_energy_and_band_filters(file_name):
     detection = SpeechDetection(file_name)
     speech = detection.detect_speech()
     return str(len(speech))
@@ -205,7 +207,9 @@ def split_file_name_from_extension(file):
     return file_name, extension
 
 def recognize(file_names):
+    speech_to_text = []
     for file_name in file_names:
-        speechToText = SpeechToText(file_name,'ibm')
+        speechToText = SpeechToText(file_name,'vosk')
         text = speechToText.recognize()
-        print(text)
+        speech_to_text.append(text)
+    return ' '.join(speech_to_text)

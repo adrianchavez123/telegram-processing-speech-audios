@@ -2,14 +2,14 @@ import telebot
 import json
 import os
 import re
-from audio_helper import get_format, save_audio, count_words
+from audio_helper import get_format, save_audio, analyze_audio
 from audio_details import save_audio_deliver
 
 telegram_token = os.environ['TELEGRAM_TOKEN']
 success_response = os.environ.get('SUCCESS_RESPONSE', 'Assignment delivered successfully')
 response_message = os.environ.get('RESPONSE_MESSAGE', 'Tarea recibida.')
 failure_message = os.environ.get('FAILURE_MESSAGE', 'Algo salia mal con el envio de la tarea, por favor vuelva a intentarlo.')
-analize_speech_method = os.environ.get('ANALIZE_SPEECH_METHOD', 'AMPLITUDE_TO_DB')
+analyze_speech_method = os.environ.get('analyze_SPEECH_METHOD', 'AMPLITUDE_TO_DB')
 
 bot = telebot.TeleBot(telegram_token)
 
@@ -28,8 +28,8 @@ def handle_audio(message):
 
 	try:
 		sound, file_name = save_audio(downloaded_file,message.from_user.id,message.date,message.audio.file_unique_id,message.audio.mime_type)
-		count = count_words(sound, analize_speech_method, file_name)
-		response = save_audio_deliver(60, message.from_user.id, file_info.file_path, count)
+		words_amount, text = analyze_audio(sound, analyze_speech_method, file_name)
+		response = save_audio_deliver(60, message.from_user.id, file_info.file_path, words_amount, text)
 		if re.match(re.escape(success_response),response['message']):
 			bot.reply_to(message, response_message)
 		else:
@@ -44,8 +44,8 @@ def handle_voice(message):
 	downloaded_file = bot.download_file(file_info.file_path)
 	try:
 		sound, file_name = save_audio(downloaded_file,message.from_user.id,message.date,message.voice.file_unique_id,message.voice.mime_type)
-		count = count_words(sound, analize_speech_method, file_name)
-		response = save_audio_deliver(60, message.from_user.id, file_info.file_path, count)
+		words_amount, text = analyze_audio(sound, analyze_speech_method, file_name)
+		response = save_audio_deliver(60, message.from_user.id, file_info.file_path, words_amount, text)
 		if re.match(re.escape(success_response),response['message']):
 			bot.reply_to(message, response_message)
 		else:
