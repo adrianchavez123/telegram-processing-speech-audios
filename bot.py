@@ -7,6 +7,7 @@ from audio_details import save_audio_deliver
 
 telegram_token = os.environ['TELEGRAM_TOKEN']
 success_response = os.environ.get('SUCCESS_RESPONSE', 'Assignment delivered successfully')
+update_success_response = os.environ.get('UPDATE_SUCCESS_RESPONSE', 'Update successful!')
 response_message = os.environ.get('RESPONSE_MESSAGE', 'Tarea recibida.')
 failure_message = os.environ.get('FAILURE_MESSAGE', 'Algo salia mal con el envio de la tarea, por favor vuelva a intentarlo.')
 analyze_speech_method = os.environ.get('analyze_SPEECH_METHOD', 'AMPLITUDE_TO_DB')
@@ -29,8 +30,8 @@ def handle_audio(message):
 	try:
 		sound, file_name = save_audio(downloaded_file,message.from_user.id,message.date,message.audio.file_unique_id,message.audio.mime_type)
 		words_amount, text = analyze_audio(sound, analyze_speech_method, file_name)
-		response = save_audio_deliver(60, message.from_user.id, file_info.file_path, words_amount, text)
-		if re.match(re.escape(success_response),response['message']):
+		response = save_audio_deliver(message.from_user.id, file_info.file_path, words_amount, text)
+		if re.match(re.escape(success_response),response['message']) or re.match(re.escape(update_success_response),response['message']):
 			bot.reply_to(message, response_message)
 		else:
 			bot.reply_to(message, failure_message)
@@ -45,8 +46,8 @@ def handle_voice(message):
 	try:
 		sound, file_name = save_audio(downloaded_file,message.from_user.id,message.date,message.voice.file_unique_id,message.voice.mime_type)
 		words_amount, text = analyze_audio(sound, analyze_speech_method, file_name)
-		response = save_audio_deliver(60, message.from_user.id, file_info.file_path, words_amount, text)
-		if re.match(re.escape(success_response),response['message']):
+		response = save_audio_deliver(message.from_user.id, file_info.file_path, words_amount, text)
+		if re.match(re.escape(success_response),response['message']) or re.match(re.escape(update_success_response),response['message']):
 			bot.reply_to(message, response_message)
 		else:
 			bot.reply_to(message, failure_message)
