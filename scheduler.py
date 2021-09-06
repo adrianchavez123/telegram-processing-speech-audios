@@ -4,6 +4,9 @@ import requests
 import os, json
 import telebot
 import urllib.request
+from dotenv import load_dotenv
+
+load_dotenv()
 
 telegram_token = os.environ['TELEGRAM_TOKEN']
 word_count_service = os.environ.get('WORD_COUNTER_SERVICE', 'http://localhost:5000/api')

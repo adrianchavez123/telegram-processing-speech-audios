@@ -4,6 +4,9 @@ from ibm_watson import SpeechToTextV1
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from vosk import Model, KaldiRecognizer, SetLogLevel
 import wave
+from dotenv import load_dotenv
+
+load_dotenv()
 
 ibm_speech_to_text_api_key = os.environ['IBM_SPEECH_TO_TEXT_API_KEY']
 ibm_speech_to_text_url = os.environ['IBM_SPEECH_TO_TEXT_URL']

@@ -8,6 +8,9 @@ import numpy as np
 import os,json
 from vosk import Model, KaldiRecognizer, SetLogLevel
 import wave
+from dotenv import load_dotenv
+
+load_dotenv()
 
 audios_dir = os.environ.get('AUDIOS_DIRECTORY', './audios')
 max_size_audio_duration = os.environ.get('MAX_SIZE_AUDIO_DURATION', '180')

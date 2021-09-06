@@ -1,0 +1,25 @@
+TELEGRAM_TOKEN=<token>
+
+SUCCESS_RESPONSE=Assignment delivered successfully
+UPDATE_SUCCESS_RESPONSE=Update successful!
+RESPONSE_MESSAGE=Tarea recibida.
+FAILURE_MESSAGE=Algo salia mal con el envio de la tarea, por favor vuelva a intentarlo.'
+ANALYZE_SPEECH_METHOD=AMPLITUDE_TO_DB
+
+AUDIOS_DIRECTORY=./audios
+MAX_SIZE_AUDIO_DURATION=180
+MAX_SIZE_AUDIO_CHUNK_DURATION=20
+
+
+WORD_COUNTER_SERVICE=http://localhost:5000/api
+DELIVER_ASSIGNMENT_ENDPOINT=/deliver-assignments
+GET_LAST_ASSIGNMENT_ID=/assignments/last-assignment
+TELEGRAM_AUDIO_ENDPOINT=https://api.telegram.org/file/bot
+
+IBM_SPEECH_TO_TEXT_API_KEY=<api key>
+IBM_SPEECH_TO_TEXT_URL=<url>
+
+WORD_COUNTER_SERVICE=http://localhost:5000/api
+CLOSE_PASS_DUE_DATE_END_POINT=/assignments/close-pass-due-date
+PENDING_NOTIFICATIONS_END_POINT=/assignments/pending-notifications
+DELETE_NOTIFICATIONS_SENT_END_POINT=/assignments/delete-notification

@@ -4,13 +4,16 @@ import os
 import re
 from audio_helper import get_format, save_audio, analyze_audio
 from audio_details import save_audio_deliver
+from dotenv import load_dotenv
+
+load_dotenv()
 
 telegram_token = os.environ['TELEGRAM_TOKEN']
 success_response = os.environ.get('SUCCESS_RESPONSE', 'Assignment delivered successfully')
 update_success_response = os.environ.get('UPDATE_SUCCESS_RESPONSE', 'Update successful!')
 response_message = os.environ.get('RESPONSE_MESSAGE', 'Tarea recibida.')
 failure_message = os.environ.get('FAILURE_MESSAGE', 'Algo salia mal con el envio de la tarea, por favor vuelva a intentarlo.')
-analyze_speech_method = os.environ.get('analyze_SPEECH_METHOD', 'AMPLITUDE_TO_DB')
+analyze_speech_method = os.environ.get('ANALYZE_SPEECH_METHOD', 'AMPLITUDE_TO_DB')
 
 bot = telebot.TeleBot(telegram_token)
 
