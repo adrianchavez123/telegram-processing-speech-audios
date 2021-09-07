@@ -41,7 +41,7 @@ Run `python bot.py` or `python3 bot.py` and enjoy your bot and start sending aud
 
 ## Schedule
 
-This project works together with [word-counter-backend](https://github.com/adrianchavez123/word-counter-backend/) a backend service that stores the result of the analysis of the audios, the services can be consumed via api calls. Next to `bot.py`, you are going to find the `scheduler.py` file that depends on [schedule library] (https://schedule.readthedocs.io/en/stable/), to manage schedule jobs.
+This project works together with [word-counter-backend](https://github.com/adrianchavez123/word-counter-backend/) a backend service that stores the result of the analysis of the audios, the services can be consumed via api calls. Next to `bot.py`, you are going to find the `scheduler.py` file that depends on [schedule library](https://schedule.readthedocs.io/en/stable/), to manage schedule jobs.
 
 Run `python schedule.py` or `python3 schedule.py` the script will keep running and its jobs will be executed once they met the criterion.
 
