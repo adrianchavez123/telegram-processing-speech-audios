@@ -14,6 +14,8 @@ the required dependecies are on `requirements.txt` and the command bellow will i
 pip install -r requirements.txt
 ```
 
+__Note__ if you see a problem with soundfile library, that is used by librosa library and you are running the script in a rpm package management, you need to run this command. `yum install libsndfile`.
+
 
 ## Install ffmpeg
 `AudioSegment` is a library that manipulates audio files and for some operations `ffmpeg` is a requirement,it can be installed on different OS.
