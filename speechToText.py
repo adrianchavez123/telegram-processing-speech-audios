@@ -5,7 +5,9 @@ from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from vosk import Model, KaldiRecognizer, SetLogLevel
 import wave
 from dotenv import load_dotenv
-
+from os import environ, path
+from pocketsphinx.pocketsphinx import *
+from sphinxbase.sphinxbase import *
 load_dotenv()
 
 ibm_speech_to_text_api_key = os.environ['IBM_SPEECH_TO_TEXT_API_KEY']
@@ -24,7 +26,31 @@ class SpeechToText():
             return self._recognize_ibm()
         elif(self.method == 'vosk'):
             return self._recognize_vosk()
+        elif(self.method == 'sphinx'):
+            return self._recognize_sphinx()
         raise Exception('Unrecognized method to translate speech to text.')
+
+    def _recognize_sphinx(self):
+        config = Decoder.default_config()
+        config.set_string('-hmm', 'sphinx/cmusphinx-es-5.2/model_parameters/voxforge_es_sphinx.cd_ptm_4000')
+        config.set_string('-lm', 'sphinx/es-20k.lm.gz')
+        config.set_string('-dict', 'sphinx/es.dict')
+
+        decoder = Decoder(config)
+        decoder.start_utt()
+        stream = open(self.file_name, 'rb')
+        while True:
+          buf = stream.read(1024)
+          if buf:
+            decoder.process_raw(buf, False, False)
+          else:
+            break
+        decoder.end_utt()
+        words = []
+        for seg in decoder.seg():
+            if "<" not in seg.word:
+                words.append(seg.word)
+        return ' '.join(words)
 
     def _recognize_vosk(self):
         SetLogLevel(0)

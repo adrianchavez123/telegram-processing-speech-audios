@@ -212,7 +212,7 @@ def split_file_name_from_extension(file):
 def recognize(file_names):
     speech_to_text = []
     for file_name in file_names:
-        speechToText = SpeechToText(file_name,'vosk')
+        speechToText = SpeechToText(file_name,'sphinx')
         text = speechToText.recognize()
         speech_to_text.append(text)
     return ' '.join(speech_to_text)
