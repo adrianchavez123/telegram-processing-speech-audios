@@ -107,6 +107,7 @@ class SpeechToText():
                 return ''
             try:
                 text = res.get_result()['results'][0]['alternatives'][0]['transcript']
+                return text
             except Exception as e:
                 print(e)
                 return ""
