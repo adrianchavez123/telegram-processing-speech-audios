@@ -9,8 +9,10 @@ import os,json
 from vosk import Model, KaldiRecognizer, SetLogLevel
 import wave
 from dotenv import load_dotenv
-
+import logging
 load_dotenv()
+logging.basicConfig(filename='logs/test.log', level = logging.DEBUG,
+format='%(asctime)s:%(levelname)s:%(message)s')
 
 audios_dir = os.environ.get('AUDIOS_DIRECTORY', './audios')
 max_size_audio_duration = os.environ.get('MAX_SIZE_AUDIO_DURATION', '180')
@@ -18,6 +20,7 @@ max_size_audio_chunk_duration = os.environ.get('MAX_SIZE_AUDIO_CHUNK_DURATION', 
 speech_to_text_model = os.environ.get('SPEECH_TO_TEXT_MODEL', 'google')
 
 def save_audio(file,user_id,date,unique_id,mime_type):
+    logging.info(f"executing save_audio(), file={file}, user_id={user_id}, date={date}")
     format = get_format(mime_type)
     new_file_name = audios_dir + "/" + str(user_id) + "_" + str(date) + "_" + str(unique_id + "." + format)
     new_file_name_as_wav = audios_dir + "/" + str(user_id) + "_" + str(date) + "_" + str(unique_id + ".wav")
@@ -34,10 +37,11 @@ def get_format(mime_type):
         return "ogg"
     elif mime_type ==  "audio/x-wav":
         return "wav"
-
+    logging.warning('The format "'+mime_type+'" is not supported.')
     raise Exception('The format "'+mime_type+'" is not supported.')
 
 def convert_to_wav_format(file,format):
+    logging.info(f" executing convert_to_wav_format(), file={file}, format={format}")
     sound = AudioSegment.from_file(file,format)
 
     if(sound.duration_seconds > int(max_size_audio_duration)):
@@ -50,9 +54,11 @@ def convert_to_wav_format(file,format):
     #make_louder = make_louder.set_frame_rate(16000)
     make_louder.export(file_name+".wav", format="wav")
     remove_audio_file(file)
+    logging.info(f"converted to {file_name}.wav")
     return make_louder
 
 def analyze_audio(sound,method,file_name):
+    logging.info(f" executing analyze_audio(), method={method}, file_name={file_name}")
     if(method == 'AMPLITUDE_TO_DB'):
         return analyze_by_amplitude_level(file_name)
     elif(method == 'ENERGY_AND_TWO_STAGE_WIDE_BAND'):
@@ -60,6 +66,7 @@ def analyze_audio(sound,method,file_name):
     return analyze_split_audio_by_silence(sound,file_name)
 
 def analyze_split_audio_by_silence(sound, file_name):
+    logging.info(f" executing analyze_split_audio_by_silence(), file_name={file_name}")
     audio_chunks = split_on_silence(sound,
         min_silence_len=500,
         silence_thresh=-16,
@@ -71,6 +78,7 @@ def analyze_split_audio_by_silence(sound, file_name):
     return str(len(audio_chunks)), text
 
 def analyze_by_amplitude_level(file_name):
+    logging.info(f" executing analyze_by_amplitude_level(), file_name={file_name}")
     Signal,sr = librosa.load(file_name)
     n_fft = 2048
     coeffficients = librosa.stft(Signal,n_fft=n_fft, hop_length=n_fft//2,window='hann', center=True)
@@ -91,6 +99,7 @@ def analyze_by_amplitude_level(file_name):
     return str(len(fragments)), text
 
 def analyze_by_energy_and_band_filters(file_name):
+    logging.info(f" executing analyze_by_energy_and_band_filters(), file_name={file_name}")
     detection = SpeechDetection(file_name)
     speech = detection.detect_speech()
     return str(len(speech))
@@ -203,7 +212,7 @@ def remove_audio_file(file_name):
     try:
         os.remove(file_name)
     except:
-        print("Error while deleting file ", file_name)
+        log.warning(f"Error deliting file, ({file_name})")
 
 def split_file_name_from_extension(file):
     file_name = file[0:-4]
@@ -211,6 +220,7 @@ def split_file_name_from_extension(file):
     return file_name, extension
 
 def recognize(file_names):
+    logging.info(f"executing recognize(), model={speech_to_text_model}")
     speech_to_text = []
     for file_name in file_names:
         speechToText = SpeechToText(file_name,speech_to_text_model)

@@ -1,8 +1,11 @@
 import requests
 import os
 from dotenv import load_dotenv
+import logging
 
 load_dotenv()
+logging.basicConfig(filename='logs/test.log', level = logging.DEBUG,
+format='%(asctime)s:%(levelname)s:%(message)s')
 
 word_count_service = os.environ.get('WORD_COUNTER_SERVICE', 'http://localhost:5000/api')
 student_endpoint = os.environ.get('STUDENT_ENDPOINT','/students')
@@ -16,6 +19,7 @@ def subscribe(student_id,username):
     	})
         return r.json()
     except requests.exceptions.RequestException as e:
+        logging.warning(f"Subscribing student ({student_id}) failed. error: {e}")
         raise Exception('Subscribing student failed.')
 
 def register(student_id, token):
@@ -23,4 +27,5 @@ def register(student_id, token):
         r = requests.get(word_count_service + join_group_endpoint + '/' + str(student_id) + '/' + str(token))
         return r.json()
     except requests.exceptions.RequestException as e:
+        logging.warning(f"Joining group ({student_id}) failed. error: {e}")
         raise Exception('Joining group failed.')
