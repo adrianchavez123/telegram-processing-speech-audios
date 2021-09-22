@@ -10,7 +10,7 @@ get_last_assignment_id = os.environ.get('GET_LAST_ASSIGNMENT_ID','/assignments/l
 telegram_token = os.environ['TELEGRAM_TOKEN']
 telegram_audio_endpoint = os.environ.get('TELEGRAM_AUDIO_ENDPOINT','https://api.telegram.org/file/bot')
 
-def save_audio_deliver(student_id, file_name, total_words_detected, speech_to_text):
+def save_audio_deliver(student_id, file_name, total_words_detected, speech_to_text, date):
 	try:
 		assignment_id, verb, deliver_assignment_id = get_assignment_id(student_id);
 		r = None
@@ -20,7 +20,8 @@ def save_audio_deliver(student_id, file_name, total_words_detected, speech_to_te
 			"student_id": student_id,
 			"audio_URL": telegram_audio_endpoint + telegram_token + '/' + file_name,
 			"total_words_detected": total_words_detected,
-			"speech_to_text": speech_to_text
+			"speech_to_text": speech_to_text,
+			"arrive_at": date
 			})
 		else:
 			r = requests.put(word_count_service + deliver_assignment_endpoint + "/" + str(deliver_assignment_id), json={
@@ -28,7 +29,8 @@ def save_audio_deliver(student_id, file_name, total_words_detected, speech_to_te
 			"student_id": student_id,
 			"audio_URL": telegram_audio_endpoint + telegram_token + '/' + file_name,
 			"total_words_detected": total_words_detected,
-			"speech_to_text": speech_to_text
+			"speech_to_text": speech_to_text,
+			"arrive_at": date
 			})
 		return r.json()
 	except requests.exceptions.RequestException as e:

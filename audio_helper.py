@@ -15,6 +15,7 @@ load_dotenv()
 audios_dir = os.environ.get('AUDIOS_DIRECTORY', './audios')
 max_size_audio_duration = os.environ.get('MAX_SIZE_AUDIO_DURATION', '180')
 max_size_audio_chunk_duration = os.environ.get('MAX_SIZE_AUDIO_CHUNK_DURATION', '20')
+speech_to_text_model = os.environ.get('SPEECH_TO_TEXT_MODEL', 'google')
 
 def save_audio(file,user_id,date,unique_id,mime_type):
     format = get_format(mime_type)
@@ -212,7 +213,7 @@ def split_file_name_from_extension(file):
 def recognize(file_names):
     speech_to_text = []
     for file_name in file_names:
-        speechToText = SpeechToText(file_name,'sphinx')
+        speechToText = SpeechToText(file_name,speech_to_text_model)
         text = speechToText.recognize()
         speech_to_text.append(text)
     return ' '.join(speech_to_text)
