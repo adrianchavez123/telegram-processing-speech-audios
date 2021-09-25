@@ -114,7 +114,7 @@ def process_audios():
 
 # CRONJOBS #
 # runs every 10 seconds, if a new assignment was created trigger notify group members
-#schedule.every(10).seconds.do(notify_group_new_assignment)
+schedule.every(10).seconds.do(notify_group_new_assignment)
 
 # runs at 23:50 and closes assignments where its due date has been reached
 schedule.every().day.at("23:50").do(close_pass_due_date_assignments)
