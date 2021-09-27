@@ -57,6 +57,42 @@ The job runs every 10 seconds
 #### close_pass_due_date_assignments
 The closing pass due date process runs one day at `23:50` and its job is to close any assignment that is pass due date.
 
+
+## Configure scripts to run as services
+Linux services or daemons provides easy ways to start, restart and stop but also the services can be configure to run at startup and also restart if something goes wrong. this seccion is going give you an overflow of how to convert a python script to a service. Talking about this application the scripts **scheduler.py** and **bot.py** are good fit to become a service they need to be running all the time so they listen to updates or to run some features at a specific time. for more detail you can check [How To Use Systemctl to Manage Systemd Services and Units](https://www.digitalocean.com/community/tutorials/how-to-use-systemctl-to-manage-systemd-services-and-units) and the post [Setup a python script as a service through systemctl/systemd](https://medium.com/codex/setup-a-python-script-as-a-service-through-systemctl-systemd-f0cc55a42267)
+
+Install systemd
+```
+sudo yum install systemd
+```
+
+Create a new service file, this project provides two examples of services, you can find the files under **service-files** directory.
+```
+vim /etc/systemd/system/telebot.service
+```
+
+Reload the service list
+```
+sudo systemctl daemon-reload
+```
+
+Configure the service to start at startup
+```
+sudo systemctl enable telebot.service
+```
+Start the service
+```
+sudo systemctl start telebot.service
+```
+Check service's status
+```
+sudo systemctl status telebot.service
+```
+
+Get more details of your service
+```
+journalctl -u telebot.service
+```
 ## Analysis helper
 The script that analizes and works with audio files is `audio_helper.py`, the script execute different audio processing tasks and some of them can be switched by environment files. The audio analisis can be group in the following tasks.
 
