@@ -8,7 +8,7 @@ from student_subscription import subscribe, register
 import logging
 
 load_dotenv()
-logging.basicConfig(filename='logs/test.log', level = logging.DEBUG,
+logging.basicConfig(filename='/home/ec2-user/auto-subscribe-students/logs/test.log', level = logging.DEBUG,
 format='%(asctime)s:%(levelname)s:%(message)s')
 
 telegram_token = os.environ['TELEGRAM_TOKEN']
@@ -17,7 +17,7 @@ update_success_response = os.environ.get('UPDATE_SUCCESS_RESPONSE', 'Update succ
 response_message = os.environ.get('RESPONSE_MESSAGE', 'Tarea recibida.')
 failure_message = os.environ.get('FAILURE_MESSAGE', 'Algo salia mal con el envio de la tarea, por favor vuelva a intentarlo.')
 analyze_speech_method = os.environ.get('ANALYZE_SPEECH_METHOD', 'AMPLITUDE_TO_DB')
-audio_jobs = os.environ.get('AUDIO_JOBS_FILE', './audio_jobs.csv')
+audio_jobs = os.environ.get('AUDIO_JOBS_FILE', '/home/ec2-user/auto-subscribe-students/audio_jobs.csv')
 bot = telebot.TeleBot(telegram_token)
 
 def add_to_job(message,file_id):

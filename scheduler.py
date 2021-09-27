@@ -12,7 +12,7 @@ from datetime import datetime
 import logging
 
 load_dotenv()
-logging.basicConfig(filename='logs/test.log', level = logging.DEBUG,
+logging.basicConfig(filename='/home/ec2-user/auto-subscribe-students/logs/test.log', level = logging.INFO,
 format='%(asctime)s:%(levelname)s:%(message)s')
 
 telegram_token = os.environ['TELEGRAM_TOKEN']
@@ -21,7 +21,8 @@ close_pass_due_date_end_point = os.environ.get('CLOSE_PASS_DUE_DATE_END_POINT','
 pending_notifications_end_point = os.environ.get('PENDING_NOTIFICATIONS_END_POINT','/assignments/pending-notifications')
 delete_notifications_sent_end_point = os.environ.get('DELETE_NOTIFICATIONS_SENT_END_POINT','/assignments/delete-notification')
 analyze_speech_method = os.environ.get('ANALYZE_SPEECH_METHOD', 'AMPLITUDE_TO_DB')
-audio_jobs = os.environ.get('AUDIO_JOBS_FILE', './audio_jobs.csv')
+audio_jobs = os.environ.get('AUDIO_JOBS_FILE', '/home/ec2-user/auto-subscribe-students/audio_jobs.csv')
+temp_image = os.environ.get('TEMP_IMAGE', '/home/ec2-user/auto-subscribe-students/images/temp_image')
 
 bot = telebot.TeleBot(telegram_token)
 
@@ -65,12 +66,12 @@ def send_notification(assignment_title, description, due_date, image, student_id
         chucks = image.split('.')
         extension = chucks[len(chucks)-1]
         with urllib.request.urlopen(image) as url:
-            with open(f'./imagestemp.{extension}', 'wb') as f:
+            with open(f'{temp_image}.{extension}', 'wb') as f:
                 f.write(url.read())
-        photo = open(f'./imagestemp.{extension}', 'rb')
+        photo = open(f'{temp_image}.{extension}', 'rb')
         logging.debug(f"sending notification: {assignment_title},{description}")
         bot.send_photo(student_id, photo, getText(assignment_title, description, due_date), parse_mode = "Markdown")
-        os.remove(f'./imagestemp.{extension}')
+        os.remove(f'{temp_image}.{extension}')
     else :
         logging.debug(f"sending notification: {assignment_title},{description}")
         bot.send_message(student_id, getText(assignment_title, description, due_date), parse_mode = "Markdown")
@@ -120,7 +121,7 @@ schedule.every(10).seconds.do(notify_group_new_assignment)
 schedule.every().day.at("23:50").do(close_pass_due_date_assignments)
 
 # heavy task that process the audios
-schedule.every().day.at("02:00").do(process_audios)
+schedule.every().day.at("22:00").do(process_audios)
 
 while True:
     schedule.run_pending()

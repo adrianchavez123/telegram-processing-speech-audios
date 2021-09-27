@@ -11,10 +11,10 @@ import wave
 from dotenv import load_dotenv
 import logging
 load_dotenv()
-logging.basicConfig(filename='logs/test.log', level = logging.DEBUG,
+logging.basicConfig(filename='/home/ec2-user/auto-subscribe-students/logs/test.log', level = logging.WARNING,
 format='%(asctime)s:%(levelname)s:%(message)s')
 
-audios_dir = os.environ.get('AUDIOS_DIRECTORY', './audios')
+audios_dir = os.environ.get('AUDIOS_DIRECTORY', '/home/ec2-user/auto-subscribe-students/audios')
 max_size_audio_duration = os.environ.get('MAX_SIZE_AUDIO_DURATION', '180')
 max_size_audio_chunk_duration = os.environ.get('MAX_SIZE_AUDIO_CHUNK_DURATION', '20')
 speech_to_text_model = os.environ.get('SPEECH_TO_TEXT_MODEL', 'google')
