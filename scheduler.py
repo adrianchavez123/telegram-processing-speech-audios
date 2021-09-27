@@ -63,15 +63,20 @@ def send_notification(assignment_title, description, due_date, image, student_id
     logging.debug("sending notification")
     if image:
         logging.debug("sending notification with image")
-        chucks = image.split('.')
-        extension = chucks[len(chucks)-1]
-        with urllib.request.urlopen(image) as url:
-            with open(f'{temp_image}.{extension}', 'wb') as f:
-                f.write(url.read())
-        photo = open(f'{temp_image}.{extension}', 'rb')
-        logging.debug(f"sending notification: {assignment_title},{description}")
-        bot.send_photo(student_id, photo, getText(assignment_title, description, due_date), parse_mode = "Markdown")
-        os.remove(f'{temp_image}.{extension}')
+        chunks = image.rsplit('.', 1)
+        extension = chunks[1]
+        try:
+            with urllib.request.urlopen(image) as url:
+                with open(f'{temp_image}.{extension}', 'wb') as f:
+                    f.write(url.read())
+            photo = open(f'{temp_image}.{extension}', 'rb')
+            logging.debug(f"sending notification: {assignment_title},{description}")
+            bot.send_photo(student_id, photo, getText(assignment_title, description, due_date), parse_mode = "Markdown")
+            os.remove(f'{temp_image}.{extension}')
+        except Exception as e:
+            logging.warning(f" failed sending notification with image: {image}")
+            logging.debug(f"sending notification: {assignment_title},{description}") 
+            bot.send_message(student_id, getText(assignment_title, description, due_date), parse_mode = "Markdown")
     else :
         logging.debug(f"sending notification: {assignment_title},{description}")
         bot.send_message(student_id, getText(assignment_title, description, due_date), parse_mode = "Markdown")
