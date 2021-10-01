@@ -47,7 +47,7 @@ def send_welcome(message):
 	try:
 		logging.info(f"Subscribing ({message.from_user.id} - {message.from_user.first_name}) ")
 		subscribe(message.from_user.id, message.from_user.first_name)
-		bot.reply_to(message, "Hola, por favor utiliza esta canal para enviar tus tareas, casi estamos listo por favor ingresa /registrar espacio y el numero de grupo que tu maestro compartio.")
+		bot.reply_to(message, "Hola, por favor utiliza esta canal para enviar tus tareas, para continuar envia /alumno espacio y el numero de alumno que tu maestro/a compartio.")
 	except:
 		bot.reply_to(message, "Hola, ocurrio un error, por favor intenta iniciar más tarde escribiendo /iniciar en este canal.")
 		logging.warning(f"the subscription of ({message.from_user.id} - {message.from_user.first_name}) failed.")
