@@ -4,7 +4,7 @@ import os
 import re
 import csv
 from dotenv import load_dotenv
-from student_subscription import subscribe, register
+from student_subscription import subscribe, register, update_student_profile
 import logging
 
 load_dotenv()
@@ -52,23 +52,24 @@ def send_welcome(message):
 		bot.reply_to(message, "Hola, ocurrio un error, por favor intenta iniciar más tarde escribiendo /iniciar en este canal.")
 		logging.warning(f"the subscription of ({message.from_user.id} - {message.from_user.first_name}) failed.")
 
-@bot.message_handler(commands=['registrar'])
-def join_group(message):
+
+@bot.message_handler(commands=['alumno'])
+def link_chat_id_to_student(message):
 	try:
-		logging.info(f"join group ({message.from_user.id} - {message.from_user.first_name}) ")
-		token = message.text.split()[1]
-		response = register(message.from_user.id, token)
-		register_response = "registered to group"
-		if re.match(register_response,response['message']):
-			bot.reply_to(message, "registrado :), por favor utiliza este chat para enviar tus tareas.")
+
+		id = message.text.split()[1]
+		logging.info(f"attach chat id  ({message.from_user.id} ) to student id ({id})")
+		response = update_student_profile(message.from_user.id, id)
+		success_msg = "Update successful!"
+		if re.match(success_msg,response['message']):
+			bot.reply_to(message, "alumno agregado.")
 		else:
-			bot.reply_to(message, "no registrado, por favor intenta registrarte más tarde.")
-			logging.warning(f"Registration of id: {message.from_user.id} failed.")
+			bot.reply_to(message, "alumno no agregado")
+			logging.warning(f"telegram id ({message.from_user.id})was not linked to  student id ({str(id)})")
 	except Exception as e:
 		print(e)
-		bot.reply_to(message, "error, por favor asegurate de escriber el numero de token.")
-		logging.warning(f"Registration of id: {message.from_user.id} failed.")
-
+		bot.reply_to(message, "error, por favor asegurate de separar el numero por un espacio")
+		logging.warning(f"Error, telegram id ({message.from_user.id})was not linked to  student id ({str(id)})")
 
 @bot.message_handler(content_types=['audio'])
 def handle_audio(message):

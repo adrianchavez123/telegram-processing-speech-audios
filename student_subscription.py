@@ -29,3 +29,17 @@ def register(student_id, token):
     except requests.exceptions.RequestException as e:
         logging.warning(f"Joining group ({student_id}) failed. error: {e}")
         raise Exception('Joining group failed.')
+
+def update_student_profile(student_id, id):
+    try:
+        st = requests.get(word_count_service + student_endpoint + "/" + str(id))
+        student =  st.json()
+        logging.info(student)
+        r = requests.put(word_count_service + student_endpoint + "/" + str(id), json={
+        "username": student["username"],
+        "student_id": student_id
+    	})
+        return r.json()
+    except requests.exceptions.RequestException as e:
+        logging.warning(f"Joining group ({student_id}) failed. error: {e}")
+        raise Exception('Joining group failed.')
