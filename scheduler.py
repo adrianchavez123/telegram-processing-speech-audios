@@ -53,7 +53,11 @@ def notify_group_new_assignment():
             image = notification['image']
             students = notification['students']
             for student_id in students:
-                send_notification(assignment_title, description, due_date, image, student_id)
+                if student_id != "":
+                    logging.info(f"sending notification to {student_id}")
+                    send_notification(assignment_title, description, due_date, image, student_id)
+                else:
+                    logging.info(f"exclude empty chat id")
 
             delete_notification_template(file_name)
     except Exception as e:
@@ -75,7 +79,7 @@ def send_notification(assignment_title, description, due_date, image, student_id
             os.remove(f'{temp_image}.{extension}')
         except Exception as e:
             logging.warning(f" failed sending notification with image: {image}")
-            logging.debug(f"sending notification: {assignment_title},{description}") 
+            logging.debug(f"sending notification: {assignment_title},{description}")
             bot.send_message(student_id, getText(assignment_title, description, due_date), parse_mode = "Markdown")
     else :
         logging.debug(f"sending notification: {assignment_title},{description}")
