@@ -45,12 +45,11 @@ def add_to_job(message,file_id):
 @bot.message_handler(commands=['start','iniciar'])
 def send_welcome(message):
 	try:
-		logging.info(f"Subscribing ({message.from_user.id} - {message.from_user.first_name}) ")
-		subscribe(message.from_user.id, message.from_user.first_name)
+		logging.info(f"({message.from_user.id} - {message.from_user.first_name}) started the chat ")
 		bot.reply_to(message, "Hola, por favor utiliza esta canal para enviar tus tareas, para continuar envia /alumno espacio y el numero de alumno que tu maestro/a compartio.")
 	except:
 		bot.reply_to(message, "Hola, ocurrio un error, por favor intenta iniciar más tarde escribiendo /iniciar en este canal.")
-		logging.warning(f"the subscription of ({message.from_user.id} - {message.from_user.first_name}) failed.")
+		logging.warning(f"Something went wrong when running /start for : {message.from_user.id}")
 
 
 @bot.message_handler(commands=['alumno'])
