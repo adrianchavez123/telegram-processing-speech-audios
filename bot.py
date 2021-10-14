@@ -8,7 +8,7 @@ from student_subscription import subscribe, register, update_student_profile
 import logging
 
 load_dotenv()
-logging.basicConfig(filename='/home/ec2-user/auto-subscribe-students/logs/test.log', level = logging.DEBUG,
+logging.basicConfig(filename='/home/ec2-user/auto-subscribe-students/logs/test.log', level = logging.INFO,
 format='%(asctime)s:%(levelname)s:%(message)s')
 
 telegram_token = os.environ['TELEGRAM_TOKEN']
@@ -46,7 +46,7 @@ def add_to_job(message,file_id):
 def send_welcome(message):
 	try:
 		logging.info(f"({message.from_user.id} - {message.from_user.first_name}) started the chat ")
-		bot.reply_to(message, "Hola, por favor utiliza esta canal para enviar tus tareas, para continuar envia /alumno espacio y el numero de alumno que tu maestro/a compartio.")
+		bot.reply_to(message, "Hola, en este chat podrás mandar audios de las lecturas que te indique tu profesor/a. Para finalizar el registro escribe en el chat /alumno espacio nombre de usuario espacio y numero de grupo proporcionado por tu profesor/a.")
 	except:
 		bot.reply_to(message, "Hola, ocurrio un error, por favor intenta iniciar más tarde escribiendo /iniciar en este canal.")
 		logging.warning(f"Something went wrong when running /start for : {message.from_user.id}")
@@ -61,7 +61,7 @@ def link_chat_id_to_student(message):
 		response = update_student_profile(message.from_user.id, id)
 		success_msg = "Update successful!"
 		if re.match(success_msg,response['message']):
-			bot.reply_to(message, "alumno agregado.")
+			bot.reply_to(message, "Gracias por registrarte. Cuando tu profesor/a deje alguna actividad recibirás una notificación.")
 		else:
 			bot.reply_to(message, "alumno no agregado")
 			logging.warning(f"telegram id ({message.from_user.id})was not linked to  student id ({str(id)})")

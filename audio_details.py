@@ -4,26 +4,27 @@ from dotenv import load_dotenv
 import logging
 
 load_dotenv()
-logging.basicConfig(filename='/home/ec2-user/auto-subscribe-students/logs/test.log', level = logging.DEBUG,
+logging.basicConfig(filename='/home/ec2-user/auto-subscribe-students/logs/test.log', level = logging.INFO,
 format='%(asctime)s:%(levelname)s:%(message)s')
 
 word_count_service = os.environ.get('WORD_COUNTER_SERVICE', 'http://localhost:5000/api')
+audio_service = os.environ.get('AUDIO_SERVICE', 'http://localhost:5000/audios')
 deliver_assignment_endpoint = os.environ.get('DELIVER_ASSIGNMENT_ENDPOINT','/deliver-assignments')
 get_last_assignment_id = os.environ.get('GET_LAST_ASSIGNMENT_ID','/assignments/last-assignment')
 telegram_token = os.environ['TELEGRAM_TOKEN']
 telegram_audio_endpoint = os.environ.get('TELEGRAM_AUDIO_ENDPOINT','https://api.telegram.org/file/bot')
 
-def save_audio_deliver(student_id, file_name, total_words_detected, speech_to_text, date):
+def save_audio_deliver(student_id, file_name, total_words_detected, speech_to_text, date, verb, assignment_id, deliver_assignment_id):
 	try:
 		logging.info(f"executing save_audio_deliver {student_id} - {file_name}")
-		assignment_id, verb, deliver_assignment_id = get_assignment_id(student_id);
+
 		r = None
 		if(verb == 'POST'):
 			logging.info(f"saving a new audio deliver")
 			r = requests.post(word_count_service + deliver_assignment_endpoint, json={
 			"assignment_id": assignment_id,
 			"student_id": student_id,
-			"audio_URL": telegram_audio_endpoint + telegram_token + '/' + file_name,
+			"audio_URL": audio_service + '/' + file_name.split('/')[-1],
 			"total_words_detected": total_words_detected,
 			"speech_to_text": speech_to_text,
 			"arrive_at": date
@@ -33,7 +34,7 @@ def save_audio_deliver(student_id, file_name, total_words_detected, speech_to_te
 			r = requests.put(word_count_service + deliver_assignment_endpoint + "/" + str(deliver_assignment_id), json={
 			"assignment_id": assignment_id,
 			"student_id": student_id,
-			"audio_URL": telegram_audio_endpoint + telegram_token + '/' + file_name,
+			"audio_URL": audio_service + '/' + file_name.split('/')[-1],
 			"total_words_detected": total_words_detected,
 			"speech_to_text": speech_to_text,
 			"arrive_at": date

@@ -4,12 +4,13 @@ from dotenv import load_dotenv
 import logging
 
 load_dotenv()
-logging.basicConfig(filename='/home/ec2-user/auto-subscribe-students/logs/test.log', level = logging.DEBUG,
+logging.basicConfig(filename='/home/ec2-user/auto-subscribe-students/logs/test.log', level = logging.INFO,
 format='%(asctime)s:%(levelname)s:%(message)s')
 
 word_count_service = os.environ.get('WORD_COUNTER_SERVICE', 'http://localhost:5000/api')
 student_endpoint = os.environ.get('STUDENT_ENDPOINT','/students')
 join_group_endpoint = os.environ.get('JOIN_GROUP_ENDPOINT','/groups/join')
+get_student_endpoint = os.environ.get('GET_STUDENT_ENDPOINT','/students/chat_id')
 
 def subscribe(student_id,username):
     try:
@@ -43,3 +44,13 @@ def update_student_profile(student_id, id):
     except requests.exceptions.RequestException as e:
         logging.warning(f"Joining group ({student_id}) failed. error: {e}")
         raise Exception('Joining group failed.')
+
+
+def get_student(student_id):
+    logging.info(f"Getting student record of ({student_id})")
+    try:
+        r = requests.get(word_count_service + get_student_endpoint + '/' + str(student_id))
+        return r.json()
+    except requests.exceptions.RequestException as e:
+        logging.warning(f"Student not found ({student_id}) failed. error: {e}")
+        raise Exception('Student not found.')

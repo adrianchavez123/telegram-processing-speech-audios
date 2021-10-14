@@ -7,7 +7,8 @@ import telebot
 import urllib.request
 from dotenv import load_dotenv
 from audio_helper import get_format, save_audio, analyze_audio
-from audio_details import save_audio_deliver
+from audio_details import save_audio_deliver, get_assignment_id
+from student_subscription import get_student
 from datetime import datetime
 import logging
 
@@ -74,12 +75,12 @@ def send_notification(assignment_title, description, due_date, image, student_id
                 with open(f'{temp_image}.{extension}', 'wb') as f:
                     f.write(url.read())
             photo = open(f'{temp_image}.{extension}', 'rb')
-            logging.debug(f"sending notification: {assignment_title},{description}")
+            logging.info(f"sending notification: {assignment_title},{description}")
             bot.send_photo(student_id, photo, getText(assignment_title, description, due_date), parse_mode = "Markdown")
             os.remove(f'{temp_image}.{extension}')
         except Exception as e:
             logging.warning(f" failed sending notification with image: {image}")
-            logging.debug(f"sending notification: {assignment_title},{description}")
+            logging.info(f"sending notification: {assignment_title},{description}")
             bot.send_message(student_id, getText(assignment_title, description, due_date), parse_mode = "Markdown")
     else :
         logging.debug(f"sending notification: {assignment_title},{description}")
@@ -91,7 +92,7 @@ def getText(assignment_title, description, due_date):
     return f"_Nueva Tarea_: *{assignment_title}*\n {description}.\n {date_message}"
 
 def process_audios():
-    logging.debug(" processing audio files")
+    logging.info(" processing audio files")
     deliver_failures = []
     with open(audio_jobs) as fp:
         reader = csv.reader(fp, delimiter=",")
@@ -105,12 +106,20 @@ def process_audios():
                 file_id = row[4]
                 date = datetime.fromtimestamp(int(date_timestamp))
                 arrive_at = date.strftime('%Y-%m-%d')
-                logging.info(f"processing audio deliver (student_id={student_id} - {arrive_at} - {file_id} ).")
+                logging.warning(f"processing audio deliver (student_id={student_id} - {arrive_at} - {file_id} ).")
                 file_info = bot.get_file(file_id)
                 downloaded_file = bot.download_file(file_info.file_path)
-                sound, file_name = save_audio(downloaded_file, student_id, date_timestamp, file_unique_id, mime_type)
-                words_amount, text = analyze_audio(sound, analyze_speech_method, file_name)
-                response = save_audio_deliver(student_id, file_info.file_path, words_amount, text,arrive_at)
+                assignment_id, verb, deliver_assignment_id = get_assignment_id(student_id)
+
+                if assignment_id == "":
+                    raise Exception('No assignment found no need to process audio')
+                    logging.info('No assignment found no need to process audio')
+
+                student_record = get_student(student_id)
+                file_name = f"assignment_{assignment_id}_{student_record['username']}_{student_id}_{arrive_at}"
+                sound,file_name_wav = save_audio(downloaded_file, mime_type, file_name)
+                words_amount, text = analyze_audio(sound, analyze_speech_method, file_name_wav)
+                response = save_audio_deliver(student_id, file_name_wav, words_amount, text,arrive_at, verb, assignment_id, deliver_assignment_id)
             except Exception as e:
                 logging.warning(f"audio deliver (student_id={student_id} - {file_id} ) failed. \nerror: {e}")
                 deliver_failures.append(row)
