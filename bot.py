@@ -4,7 +4,7 @@ import os
 import re
 import csv
 from dotenv import load_dotenv
-from student_subscription import subscribe, register, update_student_profile
+from student_subscription import subscribe, register
 import logging
 
 load_dotenv()
@@ -55,16 +55,19 @@ def send_welcome(message):
 @bot.message_handler(commands=['alumno'])
 def link_chat_id_to_student(message):
 	try:
-
-		id = message.text.split()[1]
-		logging.info(f"attach chat id  ({message.from_user.id} ) to student id ({id})")
-		response = update_student_profile(message.from_user.id, id)
-		success_msg = "Update successful!"
+		command = message.text.split(" ")
+		del command[0]
+		token = command.pop()
+		username = ' '.join(command)
+		logging.info(f"register ({message.from_user.id} ) to student id ({id})")
+		response = register(message.from_user.id, token, username)
+		logging.info(f"{response}")
+		success_msg = "registered to group"
 		if re.match(success_msg,response['message']):
 			bot.reply_to(message, "Gracias por registrarte. Cuando tu profesor/a deje alguna actividad recibirás una notificación.")
 		else:
-			bot.reply_to(message, "alumno no agregado")
-			logging.warning(f"telegram id ({message.from_user.id})was not linked to  student id ({str(id)})")
+			bot.reply_to(message, "El registro fallo asegurate de escribir el número de group correctamente.")
+			logging.warning(f"telegram id ({message.from_user.id})was not subscribed  to the group token({token})")
 	except Exception as e:
 		print(e)
 		bot.reply_to(message, "error, por favor asegurate de separar el numero por un espacio")

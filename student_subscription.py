@@ -14,18 +14,25 @@ get_student_endpoint = os.environ.get('GET_STUDENT_ENDPOINT','/students/chat_id'
 
 def subscribe(student_id,username):
     try:
-        r = requests.post(word_count_service + student_endpoint, json={
-        "username": username,
-        "student_id": student_id
-    	})
-        return r.json()
+        student = get_student(student_id)
+        if 'message' in student and student['message'] == 'Student not found!':
+            r = requests.post(word_count_service + student_endpoint, json={
+            "username": username,
+            "student_id": student_id
+        	})
+            return r.json()
+        else:
+            return student
     except requests.exceptions.RequestException as e:
         logging.warning(f"Subscribing student ({student_id}) failed. error: {e}")
         raise Exception('Subscribing student failed.')
 
-def register(student_id, token):
+def register(student_id, token, username):
     try:
-        r = requests.get(word_count_service + join_group_endpoint + '/' + str(student_id) + '/' + str(token))
+        student = subscribe(student_id, username)
+        if not student:
+            raise Exception('The student was not saved.')
+        r = requests.get(word_count_service + join_group_endpoint + '/' + str(student_id) + '/' + str(token) + '/' + username)
         return r.json()
     except requests.exceptions.RequestException as e:
         logging.warning(f"Joining group ({student_id}) failed. error: {e}")
