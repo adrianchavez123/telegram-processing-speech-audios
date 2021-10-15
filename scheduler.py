@@ -109,7 +109,7 @@ def process_audios():
                 logging.warning(f"processing audio deliver (student_id={student_id} - {arrive_at} - {file_id} ).")
                 file_info = bot.get_file(file_id)
                 downloaded_file = bot.download_file(file_info.file_path)
-                assignment_id, verb, deliver_assignment_id = get_assignment_id(student_id)
+                assignment_id, verb, deliver_assignment_id, title = get_assignment_id(student_id)
 
                 if assignment_id == "":
                     raise Exception('No assignment found no need to process audio')
@@ -117,9 +117,20 @@ def process_audios():
 
                 student_record = get_student(student_id)
                 file_name = f"assignment_{assignment_id}_{student_record['username']}_{student_id}_{arrive_at}"
-                sound,file_name_wav = save_audio(downloaded_file, mime_type, file_name)
+                sound,file_name_wav = save_audio(downloaded_file, mime_type, file_name, None, "wav")
                 words_amount, text = analyze_audio(sound, analyze_speech_method, file_name_wav)
+
+                tags = {
+                "assignment": title,
+                "assignment_id": assignment_id,
+                "speech_to_text": text,
+                "total_words_detected": words_amount,
+                "student_id":str(student_id),
+                "date": date
+                }
                 response = save_audio_deliver(student_id, file_name_wav, words_amount, text,arrive_at, verb, assignment_id, deliver_assignment_id)
+                # override audio with tags
+                save_audio(downloaded_file, mime_type, file_name, tags, "mp3")
             except Exception as e:
                 logging.warning(f"audio deliver (student_id={student_id} - {file_id} ) failed. \nerror: {e}")
                 deliver_failures.append(row)

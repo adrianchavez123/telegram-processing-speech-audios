@@ -52,9 +52,10 @@ def get_assignment_id(student_id):
 		json_response = r.json()
 		assignment_id = json_response['assignment_id']
 		deliver_assignment_id = json_response['deliver_assignment_id']
+		title = json_response['title']
 		if(deliver_assignment_id is not None):
-			return assignment_id, 'PUT', deliver_assignment_id
-		return assignment_id, 'POST', None
+			return assignment_id, 'PUT', deliver_assignment_id, title
+		return assignment_id, 'POST', None, title
 	except requests.exceptions.RequestException as e:
 		logging.warning(f"The deliver was not stored in the server. error: {e}")
 		raise Exception('The deliver was not stored in the server.')

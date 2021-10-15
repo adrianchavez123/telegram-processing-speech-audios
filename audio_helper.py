@@ -19,16 +19,17 @@ max_size_audio_duration = os.environ.get('MAX_SIZE_AUDIO_DURATION', '180')
 max_size_audio_chunk_duration = os.environ.get('MAX_SIZE_AUDIO_CHUNK_DURATION', '20')
 speech_to_text_model = os.environ.get('SPEECH_TO_TEXT_MODEL', 'google')
 
-def save_audio(file, mime_type, file_name):
+def save_audio(file, mime_type, file_name, tags = None, extension = "wav"):
     logging.info(f"executing save_audio(), file_name={file_name}")
     format = get_format(mime_type)
     new_file_name = audios_dir + "/" + file_name + "." + format
-    new_file_name_as_wav = audios_dir + "/" + file_name + ".wav"
+    new_file_name_as_wav = audios_dir + "/" + file_name + "." + extension
     logging.info(f"original audio ({new_file_name})")
     logging.info(f"original saved on wav format ({new_file_name_as_wav})")
     with open(new_file_name, 'wb') as new_file:
         new_file.write(file)
-    return convert_to_wav_format(new_file_name,format,new_file_name_as_wav), new_file_name_as_wav
+
+    return convert_format(new_file_name,format,new_file_name_as_wav, tags, extension), new_file_name_as_wav
 
 def get_format(mime_type):
     if mime_type == "audio/x-m4a":
@@ -42,8 +43,8 @@ def get_format(mime_type):
     logging.warning('The format "'+mime_type+'" is not supported.')
     raise Exception('The format "'+mime_type+'" is not supported.')
 
-def convert_to_wav_format(file,format,file_name_as_wav):
-    logging.info(f" executing convert_to_wav_format(), file={file}, format={format}")
+def convert_format(file,format,file_name_as_wav, tags, extension):
+    logging.info(f" executing convert_format(), file={file}, format={format}")
     sound = AudioSegment.from_file(file,format)
 
     if(sound.duration_seconds > int(max_size_audio_duration)):
@@ -54,11 +55,14 @@ def convert_to_wav_format(file,format,file_name_as_wav):
     file_name = file[0:-4]
     file_name,_ = split_file_name_from_extension(file)
     #make_louder = make_louder.set_frame_rate(16000)
-    make_louder.export(file_name + ".wav", format="wav")
-    if file_name + ".wav" != file_name_as_wav:
+    logging.info("tags")
+    logging.info(tags)
+    logging.info(f"extension = {extension}")
+    make_louder.export(file_name + "." + extension, format=extension, tags=tags)
+    if file_name + "." + extension != file_name_as_wav:
         logging.info(f"remove original file ({file})and keep wav format")
         remove_audio_file(file)
-    logging.debug(f"converted to {file_name}.wav")
+    logging.debug(f"converted to {file_name}.{extension}")
     return make_louder
 
 def analyze_audio(sound,method,file_name):
