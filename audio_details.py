@@ -8,7 +8,7 @@ logging.basicConfig(filename='/home/ec2-user/auto-subscribe-students/logs/test.l
 format='%(asctime)s:%(levelname)s:%(message)s')
 
 word_count_service = os.environ.get('WORD_COUNTER_SERVICE', 'http://localhost:5000/api')
-audio_service = os.environ.get('AUDIO_SERVICE', 'http://localhost:5000/audios')
+audio_service = os.environ.get('AUDIO_SERVICE', 'http://calificacionlectura.online/audios')
 deliver_assignment_endpoint = os.environ.get('DELIVER_ASSIGNMENT_ENDPOINT','/deliver-assignments')
 get_last_assignment_id = os.environ.get('GET_LAST_ASSIGNMENT_ID','/assignments/last-assignment')
 telegram_token = os.environ['TELEGRAM_TOKEN']
