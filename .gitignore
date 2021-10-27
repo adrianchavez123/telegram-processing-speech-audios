@@ -141,10 +141,10 @@ cython_debug/
 .DS_Store
 
 # audios folder
-audios/
+audios/**
 
 # images folder
-images/
+images/**
 
 # notifications folder
-notifications/
+notifications/**

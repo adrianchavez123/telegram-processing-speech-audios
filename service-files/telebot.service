@@ -1,0 +1,12 @@
+[Unit]
+Description=service that listens to telegram updates
+After=multi-user.target
+[Service]
+Type=simple
+User=ec2-user
+Restart=on-failure
+Environment=PATH=/home/ec2-user/.nvm/versions/node/v16.9.0/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/home/ec2-user/.local/bin:/home/ec2-user/bin:/home/ec2-user/.nvm/versions/node/v16.9.0/bin:/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+ExecStart=/usr/bin/python3 /home/ec2-user/auto-subscribe-students/bot.py
+ExecReload=/usr/bin/python3 /home/ec2-user/auto-subscribe-students/bot.py
+[Install]
+WantedBy=multi-user.target
