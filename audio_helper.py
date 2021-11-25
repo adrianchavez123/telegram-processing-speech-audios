@@ -2,21 +2,26 @@ from pydub import AudioSegment
 from pydub.silence import split_on_silence
 from speechDetection import SpeechDetection
 from speechToText import SpeechToText
+from vosk import Model, KaldiRecognizer, SetLogLevel
+from scipy import signal
+from dotenv import load_dotenv
+from audio_io import save_audio_file, save_audio_chunck, remove_files, remove_audio_file
 import librosa
 import soundfile as sf
 import numpy as np
 import os,json
-from vosk import Model, KaldiRecognizer, SetLogLevel
 import wave
-from dotenv import load_dotenv
 import logging
+
 load_dotenv()
-logging.basicConfig(filename='/home/ec2-user/auto-subscribe-students/logs/test.log', level = logging.INFO,
+
+log_file = os.environ['LOG_FILE']
+logging.basicConfig(filename=log_file, level = logging.INFO,
 format='%(asctime)s:%(levelname)s:%(message)s')
 
-audios_dir = os.environ.get('AUDIOS_DIRECTORY', '/home/ec2-user/combine-back-and-front/public/audios')
+audios_dir = os.environ['AUDIOS_DIRECTORY']
 max_size_audio_duration = os.environ.get('MAX_SIZE_AUDIO_DURATION', '180')
-max_size_audio_chunk_duration = os.environ.get('MAX_SIZE_AUDIO_CHUNK_DURATION', '20')
+max_size_audio_chunk_duration = os.environ.get('MAX_SIZE_AUDIO_CHUNK_DURATION', '15')
 speech_to_text_model = os.environ.get('SPEECH_TO_TEXT_MODEL', 'google')
 
 def save_audio(file, mime_type, file_name, tags = None, extension = "wav"):
@@ -54,7 +59,6 @@ def convert_format(file,format,file_name_as_wav, tags, extension):
     make_louder = sound
     file_name = file[0:-4]
     file_name,_ = split_file_name_from_extension(file)
-    #make_louder = make_louder.set_frame_rate(16000)
     logging.info("tags")
     logging.info(tags)
     logging.info(f"extension = {extension}")
@@ -76,31 +80,36 @@ def analyze_audio(sound,method,file_name):
 def analyze_split_audio_by_silence(sound, file_name):
     logging.info(f" executing analyze_split_audio_by_silence(), file_name={file_name}")
     audio_chunks = split_on_silence(sound,
-        min_silence_len=500,
-        silence_thresh=-16,
-        keep_silence=100,
+        min_silence_len=100,
+        silence_thresh=-35,
+        keep_silence=60,
         seek_step=1
     )
-    chunk_file_names = save_chunks_of_audios(audio_chunks, file_name);
-    text = recognize(chunk_file_names)
+    # when the signal is reconstructed, the sound is chopping
+    #chunk_file_names = save_chunks_of_audios(audio_chunks, file_name)
+    #text = recognize(chunk_file_names)
+    #return str(len(audio_chunks)), text
+
+    # better option to construct audio segments
+    Signal,sr = librosa.load(file_name)
+    file_names = save_segment_of_audios(Signal, file_name, sr)
+    text = recognize(file_names)
+    remove_files(file_names)
     return str(len(audio_chunks)), text
 
 def analyze_by_amplitude_level(file_name):
     logging.info(f" executing analyze_by_amplitude_level(), file_name={file_name}")
+
     Signal,sr = librosa.load(file_name)
-    n_fft = 2048
-    coeffficients = librosa.stft(Signal,n_fft=n_fft, hop_length=n_fft//2,window='hann', center=True)
-    db = librosa.amplitude_to_db(np.abs(coeffficients),ref=np.max)
-    fragments = librosa.effects.split(Signal, top_db=20) # audio above 20db
+    #n_fft = 512
+    #coeffficients = librosa.stft(Signal,n_fft=n_fft, hop_length=n_fft//4,window=signal.windows.hamming, center=True)
+    #db = librosa.amplitude_to_db(np.abs(coeffficients),ref=np.max)
+
+
+    fragments = librosa.effects.split(Signal, top_db=16) # audio above 16db
     #file_names = save_librosa_chunks_of_audios(fragments,Signal, file_name, sr)
     seconds = librosa.get_duration(y=Signal, sr=sr)
 
-    #print("break by stft: ...\n\n")
-    #recognize(file_names)
-    #remove_files(file_names)
-    #print("whole audio:  ...\n\n")
-    #recognize([file_name])
-    #print("split by size  ...\n\n")
     file_names = save_segment_of_audios(Signal, file_name, sr)
     text = recognize(file_names)
     remove_files(file_names)
@@ -109,8 +118,13 @@ def analyze_by_amplitude_level(file_name):
 def analyze_by_energy_and_band_filters(file_name):
     logging.info(f" executing analyze_by_energy_and_band_filters(), file_name={file_name}")
     detection = SpeechDetection(file_name)
+    signal, rate = detection.get_data()
     speech = detection.detect_speech()
-    return str(len(speech))
+    print(f" fragmentos: {str(len(speech))}")
+    file_names = save_segment_of_audios(signal, file_name, rate)
+    text = recognize(file_names)
+    remove_files(file_names)
+    return str(len(speech)), text
 
 def save_segment_of_audios(Signal, file, sr):
     file_name,extension = split_file_name_from_extension(file)
@@ -169,58 +183,28 @@ def save_librosa_chunks_of_audios(fragments,Signal, file, sr):
 def save_chunks_of_audios(audio_chunks, file_name):
     chunk_file_names = []
     counter = 0
+    temp = None
+    i = 0
     for chunk in audio_chunks:
-        duration_in_milliseconds = len(chunk)
-        seconds = duration_in_milliseconds / 1000
         file_name_without_extension,_ = split_file_name_from_extension(file_name)
-        #print(seconds)
-        if(seconds < int(max_size_audio_chunk_duration)):
-            # save_long file
-            c, file_names = save_short_audio_chunck(chunk, file_name_without_extension, counter)
-            # chunk_file_names append file_names
-            counter = c
+        if temp is None:
+            temp = chunk
         else:
+            temp = temp.append(chunk, crossfade=80)
+
+        duration_in_milliseconds = len(temp)
+        seconds = duration_in_milliseconds / 1000
+
+        if(seconds > int(max_size_audio_chunk_duration) or i == len(audio_chunks) -1 ):
             # save_long file
-            c, file_names = save_long_audio_chunck(chunk, file_name_without_extension, counter)
+            c, chunk_file_name = save_audio_chunck(temp, file_name_without_extension, counter)
             # chunk_file_names append file_names
             counter = c
-        #counter = counter + 1
-
-def save_short_audio_chunck(audio, file_name, counter):
-    duration_in_milliseconds = len(audio)
-    seconds = duration_in_milliseconds / 1000
-    chunk_file_names = []
-    if(seconds > 10):
-        # save_audio_file(chunk, f"{file_name}_{counter}.wav")
-        pass
-    else:
-        save_audio_file(audio, f"{file_name}_{counter}.wav")
-        counter = counter + 1
-    return counter, chunk_file_names
-
-def save_long_audio_chunck(audio, file_name, counter):
-    duration_in_milliseconds = len(audio)
-    seconds = duration_in_milliseconds / 1000
-    chunk_file_names = []
-    if(seconds < 40):
-        save_audio_file(audio, f"{file_name}_{counter}.wav")
-    else:
-        pass
-    return counter, chunk_file_names
-
-def save_audio_file(audio, file_name):
-    # audio = audio.set_frame_rate(16000)
-    audio.export(file_name, format="wav")
-
-def remove_files(file_names):
-    for file_name in file_names:
-        remove_audio_file(file_name)
-
-def remove_audio_file(file_name):
-    try:
-        os.remove(file_name)
-    except:
-        log.warning(f"Error deliting file, ({file_name})")
+            temp = None
+            chunk_file_names.append(chunk_file_name)
+            print(chunk_file_name)
+        i = i + 1
+    return chunk_file_names
 
 def split_file_name_from_extension(file):
     file_name = file[0:-4]

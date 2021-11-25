@@ -10,7 +10,16 @@ class SpeechDetection():
         self.speech_window = 0.5 #half a second
         self.speech_energy_threshold = 0.6 #60% of energy in voice band
         self.speech_start_band = 300
-        self.speech_end_band = 3000
+        self.speech_end_band = 5000
+
+    def get_audio(self):
+        return self.data
+
+    def get_rate(self):
+        return self.rate
+
+    def get_data(self):
+        return self.data, self.rate
 
     def _read_wav(self, wave_file):
         self.rate, self.data = wf.read(wave_file)

@@ -13,7 +13,8 @@ from datetime import datetime
 import logging
 
 load_dotenv()
-logging.basicConfig(filename='/home/ec2-user/auto-subscribe-students/logs/test.log', level = logging.INFO,
+log_file = os.environ['LOG_FILE']
+logging.basicConfig(filename=log_file, level = logging.INFO,
 format='%(asctime)s:%(levelname)s:%(message)s')
 
 telegram_token = os.environ['TELEGRAM_TOKEN']
@@ -22,8 +23,8 @@ close_pass_due_date_end_point = os.environ.get('CLOSE_PASS_DUE_DATE_END_POINT','
 pending_notifications_end_point = os.environ.get('PENDING_NOTIFICATIONS_END_POINT','/assignments/pending-notifications')
 delete_notifications_sent_end_point = os.environ.get('DELETE_NOTIFICATIONS_SENT_END_POINT','/assignments/delete-notification')
 analyze_speech_method = os.environ.get('ANALYZE_SPEECH_METHOD', 'AMPLITUDE_TO_DB')
-audio_jobs = os.environ.get('AUDIO_JOBS_FILE', '/home/ec2-user/auto-subscribe-students/audio_jobs.csv')
-temp_image = os.environ.get('TEMP_IMAGE', '/home/ec2-user/auto-subscribe-students/images/temp_image')
+audio_jobs = os.environ['AUDIO_JOBS_FILE']
+temp_image = os.environ['TEMP_IMAGE']
 
 bot = telebot.TeleBot(telegram_token)
 

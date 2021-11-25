@@ -4,7 +4,8 @@ from dotenv import load_dotenv
 import logging
 
 load_dotenv()
-logging.basicConfig(filename='/home/ec2-user/auto-subscribe-students/logs/test.log', level = logging.INFO,
+log_file = os.environ['LOG_FILE']
+logging.basicConfig(filename=log_file, level = logging.INFO,
 format='%(asctime)s:%(levelname)s:%(message)s')
 
 word_count_service = os.environ.get('WORD_COUNTER_SERVICE', 'http://localhost:5000/api')
