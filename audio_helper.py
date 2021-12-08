@@ -1,5 +1,6 @@
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
+from pydub.utils import make_chunks
 from speechDetection import SpeechDetection
 from speechToText import SpeechToText
 from vosk import Model, KaldiRecognizer, SetLogLevel
@@ -75,7 +76,28 @@ def analyze_audio(sound,method,file_name):
         return analyze_by_amplitude_level(file_name)
     elif(method == 'ENERGY_AND_TWO_STAGE_WIDE_BAND'):
         return analyze_by_energy_and_band_filters(file_name)
+    elif(method == 'ZERO_CROSSING_RATE'):
+        return analyze_split_audio_by_zero_crossing_rate(sound,file_name)
     return analyze_split_audio_by_silence(sound,file_name)
+
+def analyze_split_audio_by_zero_crossing_rate(sound, file_name):
+    logging.info(f" executing analyze_split_audio_by_zero_crossing_rate(), file_name={file_name}")
+    chunk_length_ms = 400 # in millisec
+    chunks = make_chunks(sound, chunk_length_ms) #Make chunks
+    audio_chunks_total = []
+    for i, chunk in enumerate(chunks):
+        samples = chunk[i].get_array_of_samples()
+        audioData = np.array(samples)
+        suma =  ((audioData[:-1] * audioData[1:]) < 0).sum()
+        if(suma > 20):
+            audio_chunks_total.append(suma)
+
+    # better option to construct audio segments
+    Signal,sr = librosa.load(file_name)
+    file_names = save_segment_of_audios(Signal, file_name, sr)
+    text = recognize(file_names)
+    remove_files(file_names)
+    return str(len(audio_chunks_total)), text
 
 def analyze_split_audio_by_silence(sound, file_name):
     logging.info(f" executing analyze_split_audio_by_silence(), file_name={file_name}")
