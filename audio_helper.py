@@ -1,7 +1,5 @@
 from pydub import AudioSegment
-from pydub.silence import split_on_silence
 from pydub.utils import make_chunks
-from speechDetection import SpeechDetection
 from speechToText import SpeechToText
 from vosk import Model, KaldiRecognizer, SetLogLevel
 from scipy import signal
@@ -69,84 +67,6 @@ def convert_format(file,format,file_name_as_wav, tags, extension):
         remove_audio_file(file)
     logging.debug(f"converted to {file_name}.{extension}")
     return make_louder
-
-def analyze_audio(sound,method,file_name):
-    logging.info(f" executing analyze_audio(), method={method}, file_name={file_name}")
-    if(method == 'AMPLITUDE_TO_DB'):
-        return analyze_by_amplitude_level(file_name)
-    elif(method == 'ENERGY_AND_TWO_STAGE_WIDE_BAND'):
-        return analyze_by_energy_and_band_filters(file_name)
-    elif(method == 'ZERO_CROSSING_RATE'):
-        return analyze_split_audio_by_zero_crossing_rate(sound,file_name)
-    return analyze_split_audio_by_silence(sound,file_name)
-
-def analyze_split_audio_by_zero_crossing_rate(sound, file_name):
-    logging.info(f" executing analyze_split_audio_by_zero_crossing_rate(), file_name={file_name}")
-    chunk_length_ms = 400 # in millisec
-    chunks = make_chunks(sound, chunk_length_ms) #Make chunks
-    audio_chunks_total = []
-    for i, chunk in enumerate(chunks):
-        samples = chunk[i].get_array_of_samples()
-        audioData = np.array(samples)
-        suma =  ((audioData[:-1] * audioData[1:]) < 0).sum()
-        if(suma > 20):
-            audio_chunks_total.append(suma)
-
-    # better option to construct audio segments
-    Signal,sr = librosa.load(file_name)
-    file_names = save_segment_of_audios(Signal, file_name, sr)
-    text = recognize(file_names)
-    remove_files(file_names)
-    return str(len(audio_chunks_total)), text
-
-def analyze_split_audio_by_silence(sound, file_name):
-    logging.info(f" executing analyze_split_audio_by_silence(), file_name={file_name}")
-    audio_chunks = split_on_silence(sound,
-        min_silence_len=100,
-        silence_thresh=-35,
-        keep_silence=60,
-        seek_step=1
-    )
-    # when the signal is reconstructed, the sound is chopping
-    #chunk_file_names = save_chunks_of_audios(audio_chunks, file_name)
-    #text = recognize(chunk_file_names)
-    #return str(len(audio_chunks)), text
-
-    # better option to construct audio segments
-    Signal,sr = librosa.load(file_name)
-    file_names = save_segment_of_audios(Signal, file_name, sr)
-    text = recognize(file_names)
-    remove_files(file_names)
-    return str(len(audio_chunks)), text
-
-def analyze_by_amplitude_level(file_name):
-    logging.info(f" executing analyze_by_amplitude_level(), file_name={file_name}")
-
-    Signal,sr = librosa.load(file_name)
-    #n_fft = 512
-    #coeffficients = librosa.stft(Signal,n_fft=n_fft, hop_length=n_fft//4,window=signal.windows.hamming, center=True)
-    #db = librosa.amplitude_to_db(np.abs(coeffficients),ref=np.max)
-
-
-    fragments = librosa.effects.split(Signal, top_db=16) # audio above 16db
-    #file_names = save_librosa_chunks_of_audios(fragments,Signal, file_name, sr)
-    seconds = librosa.get_duration(y=Signal, sr=sr)
-
-    file_names = save_segment_of_audios(Signal, file_name, sr)
-    text = recognize(file_names)
-    remove_files(file_names)
-    return str(len(fragments)), text
-
-def analyze_by_energy_and_band_filters(file_name):
-    logging.info(f" executing analyze_by_energy_and_band_filters(), file_name={file_name}")
-    detection = SpeechDetection(file_name)
-    signal, rate = detection.get_data()
-    speech = detection.detect_speech()
-    print(f" fragmentos: {str(len(speech))}")
-    file_names = save_segment_of_audios(signal, file_name, rate)
-    text = recognize(file_names)
-    remove_files(file_names)
-    return str(len(speech)), text
 
 def save_segment_of_audios(Signal, file, sr):
     file_name,extension = split_file_name_from_extension(file)

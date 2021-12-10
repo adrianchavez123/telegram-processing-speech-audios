@@ -6,7 +6,8 @@ import os, json
 import telebot
 import urllib.request
 from dotenv import load_dotenv
-from audio_helper import get_format, save_audio, analyze_audio
+from AudioAnalysis import AudioAnalysis
+from audio_helper import get_format, save_audio
 from audio_details import save_audio_deliver, get_assignment_id
 from student_subscription import get_student
 from datetime import datetime
@@ -119,8 +120,9 @@ def process_audios():
                 student_record = get_student(student_id)
                 file_name = f"assignment_{assignment_id}_{student_record['username']}_{student_id}_{arrive_at}"
                 sound,file_name_wav = save_audio(downloaded_file, mime_type, file_name, None, "wav")
-                words_amount, text = analyze_audio(sound, analyze_speech_method, file_name_wav)
-
+                audioAnalysis = AudioAnalysis(file_name_wav)
+                audioAnalysis.set_sound(sound)
+                audioAnalysis.process(analyze_speech_method)
                 tags = {
                 "assignment": title,
                 "assignment_id": assignment_id,
