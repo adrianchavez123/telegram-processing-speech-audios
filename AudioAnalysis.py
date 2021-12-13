@@ -4,6 +4,7 @@ from pydub.silence import split_on_silence
 from dotenv import load_dotenv
 import logging, os, librosa
 from speechDetection import SpeechDetection
+from speechActivityDetection import SpeechActivityDetection
 from audio_helper import recognize, save_segment_of_audios
 from audio_io import remove_files
 
@@ -27,7 +28,9 @@ class AudioAnalysis():
         elif(method == 'ENERGY_AND_TWO_STAGE_WIDE_BAND'):
             return self._analyze_by_energy_and_band_filters()
         elif(method == 'ZERO_CROSSING_RATE'):
-            return self._analyze_split_audio_by_zero_crossing_rate()
+            return self._analyze_by_zero_crossing_rate()
+        elif(method == 'SHORT_TIME_ENERGY'):
+            return self._analyze_by_short_time_energy()
         return self._analyze_split_audio_by_silence()
 
     def _analyze_by_amplitude_level(self):
@@ -58,6 +61,17 @@ class AudioAnalysis():
         remove_files(file_names)
         return str(len(speech)), text
 
+    def _analyze_by_short_time_energy(self):
+        logging.info(f" executing _analyze_by_short_time_energy(), file_name={self.audio_file}")
+        detection = SpeechActivityDetection(self.audio_file)
+        signal, rate = detection.get_data()
+        speech = detection.detect_speech()
+        print(f" fragmentos: {str(len(speech))}")
+        file_names = save_segment_of_audios(signal, self.audio_file, rate)
+        text = recognize(file_names)
+        remove_files(file_names)
+        return str(len(speech)), text
+
     def _analyze_split_audio_by_silence(self):
         logging.info(f" executing analyze_split_audio_by_silence(), file_name={self.audio_file}")
         audio_chunks = split_on_silence(self.sound,
@@ -78,7 +92,7 @@ class AudioAnalysis():
         remove_files(file_names)
         return str(len(audio_chunks)), text
 
-    def _analyze_split_audio_by_zero_crossing_rate(self):
+    def _analyze_by_zero_crossing_rate(self):
         logging.info(f" executing analyze_split_audio_by_zero_crossing_rate(), file_name={self.audio_file}")
         chunk_length_ms = 400 # in millisec
         chunks = make_chunks(self.sound, chunk_length_ms) #Make chunks
