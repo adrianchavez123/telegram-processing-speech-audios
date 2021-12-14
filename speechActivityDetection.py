@@ -18,9 +18,21 @@ class SpeechActivityDetection():
     def get_data(self):
         return self.data, self.rate
 
+    def get_energy(self):
+        return self.energy
+
+    def get_vad(self):
+        return self.vad
+
+    def get_voice(self):
+        return self.voice
+
     def detect_speech(self):
         energy, vad, voice = self.calculate_energy_and_split_voice_and_no_voice()
-        voice_peaks,_ = scipy.signal.find_peaks(voice, distance=10000)
+        self.energy = energy
+        self.vad = vad
+        self.voice = voice
+        voice_peaks,_ = scipy.signal.find_peaks(voice, distance=20000)
         return voice_peaks
 
     def _stride_trick(self, data, stride_length, stride_step):
@@ -30,7 +42,7 @@ class SpeechActivityDetection():
                                                shape=(nrows, stride_length),
                                                strides=(stride_step*n, n))
 
-    def _get_frames(self, window_len=0.015, window_hop=0.015):
+    def _get_frames(self, window_len=0.05, window_hop=0.05):
 
         if window_len < window_hop: raise Exception('Window hop can not be bigger that window length.')
 
@@ -48,7 +60,7 @@ class SpeechActivityDetection():
     def short_time_energy(self, frames):
         return np.sum(np.abs(np.fft.rfft(a=frames, n=len(frames)))**2, axis=-1) / len(frames)**2
 
-    def calculate_energy_and_split_voice_and_no_voice(self, threshold=-20, window_len=0.015, window_hop=0.015, E0=1e7):
+    def calculate_energy_and_split_voice_and_no_voice(self, threshold=-20, window_len=0.05, window_hop=0.05, E0=1e7):
         frames, frames_len = self._get_frames(window_len=window_len, window_hop=window_hop)
         energy = self.short_time_energy(frames)
 
