@@ -32,7 +32,7 @@ class SpeechActivityDetection():
         self.energy = energy
         self.vad = vad
         self.voice = voice
-        voice_peaks,_ = scipy.signal.find_peaks(voice, distance=20000)
+        voice_peaks,_ = scipy.signal.find_peaks(voice, distance=35000)
         return voice_peaks
 
     def _stride_trick(self, data, stride_length, stride_step):
@@ -71,9 +71,29 @@ class SpeechActivityDetection():
         energy[energy <= -1E20] = 0 # avoid - Inf numbers
         energy = np.repeat(energy, frames_len)
 
-        threshold = np.mean(energy) # dynamic threshold, voice levels vary from audio file
-        #threshold = np.mean(energy) + np.mean(energy)* 0.10
 
-        voice_activity_detection     = np.array(energy > threshold, dtype=self.data.dtype)
-        vframes = np.array(frames.flatten()[np.where(voice_activity_detection==1)], dtype=self.data.dtype)
+        thresholds = [
+        np.mean(energy) - np.mean(energy)* 0.08,
+        np.mean(energy) - np.mean(energy)* 0.05,
+        np.mean(energy) + np.mean(energy)* 0.05,
+        np.mean(energy) + np.mean(energy)* 0.08,
+        np.average(energy)
+        ]
+        voice_actities_detection = []
+        vframes = []
+        for threshold in thresholds:
+            voice_activity_detection = np.array(energy > threshold, dtype=self.data.dtype)
+            voice_actities_detection.append(voice_activity_detection)
+            vframes.append(np.array(frames.flatten()[np.where(voice_activity_detection == 1)], dtype=self.data.dtype))
+
+        voice_activity_detection, vframes = self._get_better_frames(voice_actities_detection, vframes)
+
         return energy, voice_activity_detection, np.array(vframes, dtype=np.float64)
+
+    def _get_better_frames(self,voice_actities_detection,vframes):
+        frame_sizes = []
+        for vframe in vframes:
+            frame_sizes.append(len(vframe))
+        max_value = max(frame_sizes)
+        max_index = frame_sizes.index(max_value)
+        return voice_actities_detection[max_index],vframes[max_index]
