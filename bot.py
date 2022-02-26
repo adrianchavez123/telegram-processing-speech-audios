@@ -79,6 +79,7 @@ def handle_audio(message):
 
 	try:
 		logging.debug(f"audio recieved ({message.audio.file_id}) ")
+		# either save deliver_assignment_id with everything null or update questions code
 		add_to_job(message, message.audio.file_id)
 		bot.reply_to(message, response_message)
 	except Exception as e:
@@ -91,6 +92,7 @@ def handle_voice(message):
 		logging.debug(f"voice recieved ({message.voice.file_id}) ")
 		file_info = bot.get_file(message.voice.file_id)
 		add_to_job(message, message.voice.file_id)
+		# either save deliver_assignment_id with everything null or update questions code
 		bot.reply_to(message, response_message)
 	except Exception as e:
 		logging.warning(f" The voice audio was not added to the processing queue, error: {e} ")
